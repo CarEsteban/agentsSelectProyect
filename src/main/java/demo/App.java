@@ -27,6 +27,7 @@ public class App {
                 people.forEach(person -> {
                     var result = driver.executableQuery("CREATE (p:Person {name: $Jett, role: Duelista})")
                     var result = driver.executableQuery("CREATE (p:Person {name: $Breach, role: Iniciador})")
+                    var result = driver.executableQuery("CREATE (p:Person {name: $Viper, role: Controlador})")
                         .withConfig(QueryConfig.builder().withDatabase("neo4j").build())
                         .withParameters(Map.of("person", person))
                         .execute();
