@@ -2,6 +2,7 @@ import java.util.Scanner;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 public class App {
     public static void main(String[] args) {
@@ -102,24 +103,67 @@ public class App {
             return;
         }
 
-        String rolMasFrecuente = rolesCount.entrySet().stream()
-                                           .max(Map.Entry.comparingByValue())
-                                           .get()
-                                           .getKey();
+        long maxFrecuencia = rolesCount.values().stream().max(Long::compare).orElse(0L);
+        List<String> rolesMasFrecuentes = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : rolesCount.entrySet()) {
+            if (entry.getValue() == maxFrecuencia) {
+                rolesMasFrecuentes.add(entry.getKey());
+            }
+        }
 
-        List<String> agentes = neo4j.recomendarAgentesPorRol(usuario, rolMasFrecuente);
-        System.out.println("Recomendaciones de agentes por rol " + rolMasFrecuente + ": " + agentes);
+        List<String> agentes = neo4j.recomendarAgentesPorRoles(usuario, rolesMasFrecuentes);
+        System.out.println("Recomendaciones de agentes por roles " + rolesMasFrecuentes + ": " + agentes);
     }
 
     private static void recomendarPorHabilidad(EmbeddedNeo4j neo4j, Scanner scanner, String usuario) {
-        System.out.print("Introduce la habilidad: ");
-        String habilidad = scanner.nextLine();
+        Map<String, Long> rolesCount = neo4j.contarRolesPorUsuario(usuario);
+        if (rolesCount.isEmpty()) {
+            System.out.println("No se encontraron roles para el usuario.");
+            return;
+        }
 
-        List<String> agentes = neo4j.recomendarAgentesPorHabilidad(usuario, habilidad);
-        System.out.println("Recomendaciones de agentes por habilidad " + habilidad + ": " + agentes);
+        long maxFrecuencia = rolesCount.values().stream().max(Long::compare).orElse(0L);
+        List<String> rolesMasFrecuentes = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : rolesCount.entrySet()) {
+            if (entry.getValue() == maxFrecuencia) {
+                rolesMasFrecuentes.add(entry.getKey());
+            }
+        }
+
+        Map<String, Long> habilidadesCount = neo4j.contarHabilidadesPorUsuario(usuario, rolesMasFrecuentes);
+        if (habilidadesCount.isEmpty()) {
+            System.out.println("No se encontraron habilidades para los roles más frecuentes.");
+            return;
+        }
+
+        long maxHabilidadFrecuencia = habilidadesCount.values().stream().max(Long::compare).orElse(0L);
+        List<String> habilidadesMasFrecuentes = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : habilidadesCount.entrySet()) {
+            if (entry.getValue() == maxHabilidadFrecuencia) {
+                habilidadesMasFrecuentes.add(entry.getKey());
+            }
+        }
+
+        for (String habilidad : habilidadesMasFrecuentes) {
+            List<String> agentes = neo4j.recomendarAgentesPorHabilidades(usuario, habilidad);
+            System.out.println("Recomendaciones de agentes con habilidad " + habilidad + ": " + agentes);
+        }
     }
 
     private static void recomendarUsuarios(EmbeddedNeo4j neo4j, Scanner scanner, String usuario) {
+        List<String> usuarios = neo4j.obtenerUsuarios();
+        if (usuarios.isEmpty()) {
+            System.out.println("No se encontraron otros usuarios.");
+            return;
+        }
+
+        System.out.println("Usuarios existentes:");
+        for (String u : usuarios) {
+            if (!u.equals(usuario)) {
+                System.out.println(u);
+            }
+        }
+
         System.out.print("Introduce el nombre del otro usuario: ");
         String otroUsuario = scanner.nextLine();
 
