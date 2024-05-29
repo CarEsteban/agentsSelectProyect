@@ -59,15 +59,15 @@ public class EmbeddedNeo4j implements AutoCloseable {
         return rolesCount;
     }
 
-    public List<String> recomendarAgentesPorRol(String usuario, String rol) {
+    public List<String> recomendarAgentesPorRoles(String usuario, List<String> roles) {
         List<String> agentes = new ArrayList<>();
         try (Session session = driver.session()) {
             String query = "MATCH (u:Usuario {nombre: $usuario})-[:USA]->(p:Personaje) " +
                            "WITH collect(p.nombre) AS usados " +
-                           "MATCH (p:Personaje)-[:ES_UN]->(:Rol {nombre: $rol}) " +
-                           "WHERE NOT p.nombre IN usados " +
+                           "MATCH (p:Personaje)-[:ES_UN]->(r:Rol) " +
+                           "WHERE r.nombre IN $roles AND NOT p.nombre IN usados " +
                            "RETURN p.nombre AS nombre";
-            Result result = session.run(query, org.neo4j.driver.Values.parameters("usuario", usuario, "rol", rol));
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("usuario", usuario, "roles", roles));
             while (result.hasNext()) {
                 Record record = result.next();
                 agentes.add(record.get("nombre").asString());
@@ -76,10 +76,29 @@ public class EmbeddedNeo4j implements AutoCloseable {
         return agentes;
     }
 
-    public List<String> recomendarAgentesPorHabilidad(String usuario, String habilidad) {
+    public Map<String, Long> contarHabilidadesPorUsuario(String usuario, List<String> roles) {
+        Map<String, Long> habilidadesCount = new HashMap<>();
+        try (Session session = driver.session()) {
+            String query = "MATCH (u:Usuario {nombre: $usuario})-[:USA]->(p:Personaje)-[:ES_UN]->(r:Rol) " +
+                           "WHERE r.nombre IN $roles " +
+                           "MATCH (p)-[:TIENE_HABILIDAD]->(h:Habilidad) " +
+                           "RETURN h.nombre AS habilidad, count(*) AS frecuencia";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("usuario", usuario, "roles", roles));
+            while (result.hasNext()) {
+                Record record = result.next();
+                habilidadesCount.put(record.get("habilidad").asString(), record.get("frecuencia").asLong());
+            }
+        }
+        return habilidadesCount;
+    }
+
+    public List<String> recomendarAgentesPorHabilidades(String usuario, String habilidad) {
         List<String> agentes = new ArrayList<>();
         try (Session session = driver.session()) {
-            String query = "MATCH (u:Usuario {nombre: $usuario})-[:USA]->(p:Personaje)-[:TIENE_HABILIDAD]->(h:Habilidad {nombre: $habilidad}) " +
+            String query = "MATCH (u:Usuario {nombre: $usuario})-[:USA]->(p:Personaje) " +
+                           "WITH collect(p.nombre) AS usados " +
+                           "MATCH (p:Personaje)-[:TIENE_HABILIDAD]->(h:Habilidad {nombre: $habilidad}) " +
+                           "WHERE NOT p.nombre IN usados " +
                            "RETURN p.nombre AS nombre";
             Result result = session.run(query, org.neo4j.driver.Values.parameters("usuario", usuario, "habilidad", habilidad));
             while (result.hasNext()) {
@@ -88,6 +107,19 @@ public class EmbeddedNeo4j implements AutoCloseable {
             }
         }
         return agentes;
+    }
+
+    public List<String> obtenerUsuarios() {
+        List<String> usuarios = new ArrayList<>();
+        try (Session session = driver.session()) {
+            String query = "MATCH (u:Usuario) RETURN u.nombre AS nombre";
+            Result result = session.run(query);
+            while (result.hasNext()) {
+                Record record = result.next();
+                usuarios.add(record.get("nombre").asString());
+            }
+        }
+        return usuarios;
     }
 
     public List<String> recomendarUsuariosPorPersonajesEnComun(String usuario1, String usuario2) {
