@@ -61,10 +61,16 @@ public class App {
         boolean loginExitoso = neo4j.iniciarSesion(nombre, contrasena);
         if (loginExitoso) {
             System.out.println("Inicio de sesión exitoso.");
+            mostrarPersonajesUsados(neo4j, nombre);
             menuRecomendaciones(neo4j, scanner, nombre);
         } else {
             System.out.println("Nombre de usuario o contraseña incorrectos.");
         }
+    }
+
+    private static void mostrarPersonajesUsados(EmbeddedNeo4j neo4j, String usuario) {
+        List<String> personajes = neo4j.obtenerPersonajesUsadosPorUsuario(usuario);
+        System.out.println("Personajes que " + usuario + " suele usar: " + personajes);
     }
 
     private static void menuRecomendaciones(EmbeddedNeo4j neo4j, Scanner scanner, String usuario) {

@@ -45,6 +45,19 @@ public class EmbeddedNeo4j implements AutoCloseable {
         }
     }
 
+    public List<String> obtenerPersonajesUsadosPorUsuario(String usuario) {
+        List<String> personajes = new ArrayList<>();
+        try (Session session = driver.session()) {
+            String query = "MATCH (u:Usuario {nombre: $usuario})-[:USA]->(p:Personaje) RETURN p.nombre AS nombre";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("usuario", usuario));
+            while (result.hasNext()) {
+                Record record = result.next();
+                personajes.add(record.get("nombre").asString());
+            }
+        }
+        return personajes;
+    }
+
     public Map<String, Long> contarRolesPorUsuario(String usuario) {
         Map<String, Long> rolesCount = new HashMap<>();
         try (Session session = driver.session()) {
