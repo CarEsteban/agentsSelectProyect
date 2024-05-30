@@ -1,3 +1,5 @@
+package com.pruebas.pruebaProyectoDatos;
+
 import java.util.Scanner;
 import java.util.List;
 import java.util.Map;
@@ -6,7 +8,7 @@ import java.util.ArrayList;
 
 public class App {
     public static void main(String[] args) {
-        try (EmbeddedNeo4j neo4j = new EmbeddedNeo4j("bolt://localhost:7687", "neo4j", "password")) {
+        try (EmbeddedNeo4j neo4j = new EmbeddedNeo4j("bolt://localhost:7687", "neo4j", "123456789")) {
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 System.out.println("Menú Principal");
